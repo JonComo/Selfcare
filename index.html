@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Self Care Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        #task-form {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        #task-form input, #task-form select, #task-form button {
+            padding: 10px;
+            margin: 5px;
+            font-size: 16px;
+        }
+        #task-list {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .task-item {
+            background-color: #fff;
+            padding: 15px 20px;
+            margin: 10px;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .task-item button {
+            padding: 10px;
+            font-size: 14px;
+        }
+        .task-info {
+            flex-grow: 1;
+        }
+        .task-name {
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .task-last-done {
+            color: #777;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Self Care Tracker</h1>
+    <form id="task-form">
+        <input type="text" id="task-name" placeholder="Task Name" required>
+        <input type="number" id="task-frequency" min="1" value="1" required>
+        <select id="task-period">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+        </select>
+        <button type="submit">Add Task</button>
+    </form>
+    <div id="task-list">
+        <!-- Tasks will be listed here -->
+    </div>
+    <script>
+        // Retrieve tasks from localStorage or initialize an empty array
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+        // Function to save tasks to localStorage
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        // Function to calculate days ago
+        function getTimeAgo(dateString) {
+            const lastDoneDate = new Date(dateString);
+            const currentDate = new Date();
+            const timeDiff = currentDate - lastDoneDate;
+            const daysAgo = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+
+            if (daysAgo === 0) {
+                return 'Last done today';
+            } else if (daysAgo === 1) {
+                return 'Done yesterday';
+            } else {
+                return `Done ${daysAgo} days ago`;
+            }
+        }
+
+        // Function to render tasks
+        function renderTasks() {
+            const taskList = document.getElementById('task-list');
+            taskList.innerHTML = '';
+
+            tasks.forEach((task, index) => {
+                const taskItem = document.createElement('div');
+                taskItem.className = 'task-item';
+
+                const taskInfo = document.createElement('div');
+                taskInfo.className = 'task-info';
+
+                const taskName = document.createElement('div');
+                taskName.className = 'task-name';
+                taskName.textContent = `${task.name} - ${task.frequency} time(s) ${task.period}`;
+
+                const taskLastDone = document.createElement('div');
+                taskLastDone.className = 'task-last-done';
+                if (task.lastDoneDate) {
+                    taskLastDone.textContent = getTimeAgo(task.lastDoneDate);
+                } else {
+                    taskLastDone.textContent = 'Not done yet';
+                }
+
+                taskInfo.appendChild(taskName);
+                taskInfo.appendChild(taskLastDone);
+
+                const doneButton = document.createElement('button');
+                doneButton.textContent = 'Mark as Done';
+                doneButton.addEventListener('click', () => {
+                    task.lastDoneDate = new Date().toISOString();
+                    saveTasks();
+                    renderTasks();
+                });
+
+                taskItem.appendChild(taskInfo);
+                taskItem.appendChild(doneButton);
+                taskList.appendChild(taskItem);
+            });
+        }
+
+        // Event listener for form submission
+        document.getElementById('task-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('task-name').value.trim();
+            const frequency = document.getElementById('task-frequency').value;
+            const period = document.getElementById('task-period').value;
+
+            if (name && frequency && period) {
+                const newTask = {
+                    name: name,
+                    frequency: frequency,
+                    period: period,
+                    lastDoneDate: null
+                };
+                tasks.push(newTask);
+                saveTasks();
+                renderTasks();
+
+                // Reset form
+                document.getElementById('task-form').reset();
+            }
+        });
+
+        // Initial rendering of tasks
+        renderTasks();
+    </script>
+</body>
+</html>
